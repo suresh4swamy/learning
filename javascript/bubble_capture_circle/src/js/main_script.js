@@ -49,9 +49,9 @@ class Circle {
             setTimeout(() => {
                 this.element.classList.add(this.group[_group]);
             }, time);
-            // setTimeout(() => {
-            // this.removeGroup(_group);
-            // }, time);
+            setTimeout(() => {
+                this.removeGroup(_group);
+            }, time + 1000);
         }
     }
 
