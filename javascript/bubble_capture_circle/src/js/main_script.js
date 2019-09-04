@@ -5,6 +5,7 @@ class Circle {
     child = null;
     captureTime = 1000; // mille seconds.
     bubbleTime = 1000; // mille seconds.
+    time = 1000; // mille seconds.
     constructor(_parent) {
         this.element = document.createElement("div");
         this.element.classList.add("circle");
@@ -20,7 +21,7 @@ class Circle {
             _parent.element.appendChild(this.element);
         }
         this.parent = _parent;
-        this.updateTime(_parent);
+        // this.updateTime(_parent);
     }
 
     updateTime(parent) {
@@ -48,6 +49,11 @@ class Circle {
         ) {
             setTimeout(() => {
                 this.element.classList.add(this.group[_group]);
+                if (_group && this.child instanceof Circle) {
+                    this.child.captureTime = this.captureTime + 1000;
+                } else if (this.parent instanceof Circle) {
+                    this.parent.bubbleTime = this.bubbleTime + 1000;
+                }
             }, time);
             setTimeout(() => {
                 this.removeGroup(_group);
