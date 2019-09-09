@@ -9,7 +9,6 @@ class Circle {
     constructor(_parent) {
         this.element = document.createElement("div");
         this.element.classList.add("circle");
-        this.addEvent("click");
         this.attachTo(_parent);
     }
 
@@ -48,16 +47,24 @@ class Circle {
             this.element.className.indexOf(this.group[_group]) < 0
         ) {
             setTimeout(() => {
-                this.element.classList.add(this.group[_group]);
-                if (_group && this.child instanceof Circle) {
-                    this.child.captureTime = this.captureTime + 1000;
-                } else if (this.parent instanceof Circle) {
-                    this.parent.bubbleTime = this.bubbleTime + 1000;
+                if (_group) {
+                    this.capture_time_set_class = setTimeout(() => {
+                        this.element.classList.add(this.group[_group]);
+                    }, time);
+                    // console.log(time);
+                    this.capture_time_unset_class = setTimeout(() => {
+                        this.removeGroup(_group);
+                    }, time + 1000);
+                } else {
+                    this.bubble_time_set_class = setTimeout(() => {
+                        this.element.classList.add(this.group[_group]);
+                    }, time);
+                    // console.log(time);
+                    this.bubble_time_unset_class = setTimeout(() => {
+                        this.removeGroup(_group);
+                    }, time + 1000);
                 }
-            }, time);
-            setTimeout(() => {
-                this.removeGroup(_group);
-            }, time + 1000);
+            }, 10);
         }
     }
 
@@ -88,6 +95,11 @@ class Circle {
         this.eventType = _eventType;
         // Bubble event flow
         this.bubbleHandler = this.addGroup.bind(this, 0);
+        this.bubbleTimeResetHandler = event => {
+            if (this.parent instanceof Circle) {
+                this.parent.bubbleTime = this.bubbleTime + 1000;
+            }
+        };
         this.mouseover = event => {
             event.stopPropagation();
             this.element.classList.add("mouseover");
@@ -96,22 +108,61 @@ class Circle {
             event.stopPropagation();
             this.element.classList.remove("mouseover");
         };
+        this.element.addEventListener(_eventType, this.bubbleTimeResetHandler);
         this.element.addEventListener(_eventType, this.bubbleHandler);
         this.element.addEventListener("mouseover", this.mouseover);
         this.element.addEventListener("mouseout", this.mouseout);
 
         // Capture event flow
         this.captureHandler = this.addGroup.bind(this, 1);
+        this.captureTimeResetHandler = event => {
+            if (this.child instanceof Circle) {
+                this.child.captureTime = this.captureTime + 1000;
+            }
+        };
+        this.element.addEventListener(
+            _eventType,
+            this.captureTimeResetHandler,
+            true
+        );
         this.element.addEventListener(_eventType, this.captureHandler, true);
     }
 
     removeEvent() {
+        if (this.bubbleTimeDefaultHandler) {
+            this.element.removeEventListener(
+                this.eventType,
+                this.bubbleTimeDefaultHandler
+            );
+            this.bubbleTimeDefaultHandler = null;
+        }
+        if (this.bubbleTimeResetHandler) {
+            this.element.removeEventListener(
+                this.eventType,
+                this.bubbleTimeResetHandler
+            );
+            this.bubbleTimeResetHandler = null;
+        }
         if (this.bubbleHandler) {
             this.element.removeEventListener(
                 this.eventType,
                 this.bubbleHandler
             );
             this.bubbleHandler = null;
+        }
+        if (this.captureTimeDefaultHandler) {
+            this.element.removeEventListener(
+                this.eventType,
+                this.captureTimeDefaultHandler
+            );
+            this.captureTimeDefaultHandler = null;
+        }
+        if (this.captureTimeResetHandler) {
+            this.element.removeEventListener(
+                this.eventType,
+                this.captureTimeResetHandler
+            );
+            this.captureTimeResetHandler = null;
         }
         if (this.captureHandler) {
             this.element.removeEventListener(
@@ -143,6 +194,25 @@ function init() {
     // The first circle should be included in cicle container
     new_circle = new Circle("#circle_container");
     createCircles(8);
+    document.querySelector("#circle_container").addEventListener("click", () => {
+        let circle = new_circle;
+        while (circle instanceof Circle) {
+            circle.bubbleTime = 1000;
+            circle.captureTime = 1000;
+            clearTimeout(circle.bubble_time_set_class);
+            clearTimeout(circle.bubble_time_unset_class);
+            clearTimeout(circle.capture_time_set_class);
+            clearTimeout(circle.capture_time_unset_class);
+            circle.removeGroup(0);
+            circle.removeGroup(1);
+            circle = circle.parent;
+        }
+    });
+    let circle = new_circle;
+    while (circle instanceof Circle) {
+        circle.addEvent("click");
+        circle = circle.parent;
+    }
 }
 
 function createCircles(_count) {
